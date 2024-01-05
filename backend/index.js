@@ -34,14 +34,6 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-// app.get("/", function (req, res) {
-//   // Cookies that have not been signed
-//   console.log("Cookies: ", req.cookies);
-
-//   // Cookies that have been signed
-//   console.log("Signed Cookies: ", req.signedCookies);
-// });
-
 app.use('/api/user',authRouter)
 app.use("/api/product", productRouter);
 app.use("/api/blog", blogRouter);
