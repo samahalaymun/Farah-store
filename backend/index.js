@@ -13,21 +13,34 @@ const brandRouter = require("./routes/brandRoute");
 const couponRouter = require("./routes/couponRoute");
 const colorRouter = require("./routes/colorRoute");
 const enquiryRouter = require("./routes/enqRoute");
+const uploadRouter = require("./routes/uploadRoute");
+
 var cookieParser = require("cookie-parser");
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 const morgan=require('morgan');
+const cors = require("cors");
+
 dbConnect();
 app.use(morgan('dev'));
+let corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://192.168.1.178:3000",
+  ],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.get("/", function (req, res) {
-  // Cookies that have not been signed
-  console.log("Cookies: ", req.cookies);
+// app.get("/", function (req, res) {
+//   // Cookies that have not been signed
+//   console.log("Cookies: ", req.cookies);
 
-  // Cookies that have been signed
-  console.log("Signed Cookies: ", req.signedCookies);
-});
+//   // Cookies that have been signed
+//   console.log("Signed Cookies: ", req.signedCookies);
+// });
 
 app.use('/api/user',authRouter)
 app.use("/api/product", productRouter);
@@ -38,6 +51,7 @@ app.use("/api/brand", brandRouter);
 app.use("/api/coupon", couponRouter);
 app.use("/api/color", colorRouter);
 app.use("/api/enquiry", enquiryRouter);
+app.use("/api/upload", uploadRouter);
 app.use(notFound);
 app.use(errorHandler)
 app.listen(PORT,()=>{

@@ -7,6 +7,7 @@ const {
   deleteProduct,
   addToWishlist,
   rating,
+  searchProduct,
  
 } = require("../controllers/productCtrl");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleWares");
@@ -16,15 +17,8 @@ const router = express.Router();
 
 router.post("/", authMiddleware, isAdmin, createProduct);
 router.get("/:id", getProduct);
-router.put(
-  "/upload",
-  authMiddleware,
-  isAdmin,
-  uploadPhoto.array("images", 10),
-  productImgResize,
-  uploadImages
-);
-router.delete("/delete-img/:id", authMiddleware, isAdmin, deleteImages);
+router.get("/search/:query", searchProduct);
+
 router.put("/wishlist", authMiddleware, addToWishlist);
 router.put("/rating", authMiddleware, rating);
 router.put("/:id", authMiddleware, isAdmin, updateProduct);

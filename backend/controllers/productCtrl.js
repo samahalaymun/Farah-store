@@ -1,10 +1,12 @@
 const Product = require("../models/productModel");
+const Category = require("../models/prodcategoryModel.js");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
 const validateMongoDbId = require("../utils/validateMongodbId");
 const { cloudinaryUploadImg } = require("../utils/cloudinary");
 const fs = require("fs");
+const { type } = require("os");
 //create product
 
 const createProduct = asyncHandler(async (req, res) => {
@@ -12,7 +14,16 @@ const createProduct = asyncHandler(async (req, res) => {
     if (req.body.title) {
       req.body.slug = slugify(req.body.title);
     }
+
     const newProduct = await Product.create(req.body);
+    if (newProduct) {
+      const updatedCategory = await Category.findOneAndUpdate(
+        { title: req.body.category },
+        {
+          $inc: { items: +1 },
+        }
+      );
+    }
     res.json(newProduct);
   } catch (error) {
     throw new Error(error);
@@ -22,7 +33,7 @@ const createProduct = asyncHandler(async (req, res) => {
 const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
-  console.log(id);
+  console.log("product id is " + id);
   try {
     if (req.body.title) {
       req.body.slug = slugify(req.body.title);
@@ -35,7 +46,6 @@ const updateProduct = asyncHandler(async (req, res) => {
         new: true,
       }
     );
-    console.log(updateProduct);
     res.json(updateProduct);
   } catch (error) {
     throw new Error(error);
@@ -47,7 +57,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
   validateMongoDbId(id);
   try {
     console.log(id);
-    const deleteProduct = await Product.findOneAndDelete(id);
+    const deleteProduct = await Product.findByIdAndDelete(id);
     res.json(deleteProduct);
   } catch (error) {
     throw new Error(error);
@@ -70,11 +80,42 @@ const getAllProduct = asyncHandler(async (req, res) => {
   try {
     //filtering
     const queryObj = { ...req.query };
-    const excludeFields = ["page", "sort", "limit", "fields"];
+    const excludeFields = [
+      "page",
+      "sort",
+      "limit",
+      "fields",
+      "color",
+      "size",
+      "category",
+    ];
     excludeFields.forEach((el) => delete queryObj[el]);
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    console.log(queryStr);
     let query = Product.find(JSON.parse(queryStr));
+    if (
+      req.query?.category?.localeCompare("undefined") !== 0 &&
+      req.query.category
+    ) {
+      query = query.find({ category: req.query.category });
+    } else {
+      query = query.find();
+    }
+
+    if (req.query?.color?.localeCompare("undefined") !== 0 && req.query.color) {
+      let colors = req.query.color?.split(",").map((color) => "#" + color);
+      query = query.find({ color: { $in: colors } });
+    } else {
+      query = query.find();
+    }
+
+    if (req.query?.size?.localeCompare("undefined") !== 0 && req.query.size) {
+      let sizes = req.query.size.split(",").map((size) => size);
+      query = query.find({ size: { $in: sizes } });
+    } else {
+      query = query.find();
+    }
 
     // Sorting
     if (req.query.sort) {
@@ -199,31 +240,21 @@ const rating = asyncHandler(async (req, res) => {
   }
 });
 
-// const uploadImages = asyncHandler(async (req, res) => {
-//   const {id}=req.params
-//   validateMongoDbId(id)
-//   try {
-//     const uploader = (path) => cloudinaryUploadImg(path, "images");
-//     const urls = [];
-//     const files = req.files;
-//     for (const file of files) {
-//       const { path } = file;
-//       const newpath = await uploader(path);
-//       console.log(newpath);
-//       urls.push(newpath);
-//       fs.unlinkSync(path);
-//     }
-//     const images = urls.map((file) => {
-//       return file;
-//     });
-//     const findProduct=await Product.findByIdAndUpdate(id,{
-//       images:images
-//     },{new:true})
-//     res.json(images);
-//   } catch (error) {
-//     throw new Error(error);
-//   }
-// });
+const searchProduct = asyncHandler(async (req, res) => {
+  const { query } = req.params;
+  try {
+    const findProducts = await Product.find({
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { category: { $regex: query, $options: "i" } },
+        { brand: { $regex: query, $options: "i" } },
+      ],
+    });
+    res.json(findProducts);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
 module.exports = {
   createProduct,
   getProduct,
@@ -232,4 +263,5 @@ module.exports = {
   deleteProduct,
   addToWishlist,
   rating,
+  searchProduct,
 };

@@ -24,17 +24,21 @@ var productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      required:true
+      required: true,
     },
     brand: {
       type: String,
-        required: true,
+      required: true,
     },
     quantity: {
       type: Number,
       required: true,
     },
     sold: {
+      type: Number,
+      default: 0,
+    },
+    discount: {
       type: Number,
       default: 0,
     },
@@ -45,7 +49,8 @@ var productSchema = new mongoose.Schema(
       },
     ],
     color: [],
-    tags: [],
+    size: [],
+    tags: { type: String },
     ratings: [
       {
         star: Number,
